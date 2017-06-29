@@ -80,23 +80,21 @@ void setup() {
 
    // p/debugging (patrones sencillos) █ ░ 
    myInstrumentSet[0].pattern = 0b00010101;
-   myInstrumentSet[1].pattern = 0b00000000;
    // patron de LEDs por defecto
    setLEDsPattern(0b10101010);
 
-   Serial.begin(9600);  
-
    // p/debugging
+   // Serial.begin(9600);  
    // me aseguro de que el puerto este abierto antes de empezar a tirarle que imprima
-   while (!Serial);
+   // while (!Serial);
    // [!] OJO: hace que no sea plug and play, si no esta el monitor del puerto serie
    //          abierto no va a arrancar
-   Serial.println("Status                           ║ Actions");
-   Serial.println("═════════════════════════════════╩════════════════════════════════════════════");
+   // Serial.println("Status                           ║ Actions");
+   // Serial.println("═════════════════════════════════╩════════════════════════════════════════════");
 }
 
 void loop() {
-   timerScan();   // ejecuta stepActions (cuando corresponda)
+   timerScan();    // ejecuta stepActions (cuando corresponda)
    buttonsScan();  // ejecuta funcion de botones de la matriz (cuando corresponda)
    volumeScan();
    updateLCD();
@@ -184,7 +182,7 @@ void stepActions() {
             playPatterns();
             break;
          default:
-            switchDefault("stepActions");
+            // switchDefault("stepActions");
             break;
       }
    }
@@ -204,43 +202,34 @@ void playPatterns() {
    }
 }
 
-void printLinesLCD(char* line1, char* line2) {
-   LCD.setCursor(0,0);
-   LCD.print(line1);
-   LCD.setCursor(0,1);
-   LCD.print(line2);
-}
-
 // actualiza el texto y color del LCD segun el modo en el que este
 void updateLCD() {
-   // [!] Color del LCD
    if (modeChanged) {
-      // p/debugging
       switch (currentMode) {
          case live:
             LCD.setRGB(100,204,204); //turquesa o algo asi
             printLinesLCD("      LIVE      "," play something ");
             // p/debugging
-            Serial.println("LCD: |      LIVE      |");
-            Serial.println("     | play something |");
+            // Serial.println("LCD: |      LIVE      |");
+            // Serial.println("     | play something |");
             break;
          case patternEditor:
             if (instrumentChosen < 0) {
                LCD.setRGB(220,100,50);
                // todavia no elegi instrumento
-               printLinesLCD(" PATTERN EDITOR ","  select inst   ");
+               printLinesLCD(" PATTERN EDITOR ","  select inst.  ");
                // p/debugging
-               Serial.println("LCD: | PATTERN EDITOR |");
-               Serial.println("     |  select inst   |");
+               // Serial.println("LCD: | PATTERN EDITOR |");
+               // Serial.println("     |  select inst   |");
             } else {
                LCD.setRGB(220,100,50);
                // ya elegi instrumento, estoy editando su patron
-               printLinesLCD(" PATTERN EDITOR ","  editing inst  ");
+               printLinesLCD(" PATTERN EDITOR ","  editing inst. ");
                // p/debugging
-               Serial.println("LCD: | PATTERN EDITOR |");
-               Serial.print  ("     | editing inst ");
-               Serial.print  (instrumentChosen);
-               Serial.println(" |");
+               // Serial.println("LCD: | PATTERN EDITOR |");
+               // Serial.print  ("     | editing inst ");
+               // Serial.print  (instrumentChosen);
+               // Serial.println(" |");
                // [!] ojo con que sea de dos digitos el numero de instrumento
             }
             break;
@@ -248,43 +237,45 @@ void updateLCD() {
             if (instrumentChosen < 0) {
                LCD.setRGB(129,218,70); //verdecito o algo asi
                // todavia no elegi instrumento
-               printLinesLCD("   SET EDITOR   ","  select inst   ");
+               printLinesLCD("   SET EDITOR   ","  select inst.  ");
                // p/debugging
-               Serial.println("LCD: |   SET EDITOR   |");
-               Serial.println("     |  select inst   |");
+               // Serial.println("LCD: |   SET EDITOR   |");
+               // Serial.println("     |  select inst   |");
             } else {
                LCD.setRGB(129,218,70); //verdecito o algo asi
                // ya elegi instrumento, estoy editando su patron
-               printLinesLCD("   SET EDITOR   ","  editing inst  ");
+               printLinesLCD("   SET EDITOR   ","  editing inst. ");
                // p/debugging
-               Serial.println("LCD: |   SET EDITOR   |");
-               Serial.print  ("     | editing inst ");
-               Serial.print  (instrumentChosen);
-               Serial.println(" |");
+               // Serial.println("LCD: |   SET EDITOR   |");
+               // Serial.print  ("     | editing inst ");
+               // Serial.print  (instrumentChosen);
+               // Serial.println(" |");
                // [!] ojo con que sea de dos digitos el numero de instrumento
             }
             break;
          case mute:
             LCD.setRGB(225,219,59); //turquesa o algo asi
-            printLinesLCD("      MUTE      ","  select inst   ");
+            printLinesLCD("      MUTE      ","  select inst.  ");
             // p/debugging
-            Serial.println("LCD: |      MUTE      |");
-            Serial.println("     |  select inst   |");
+            // Serial.println("LCD: |      MUTE      |");
+            // Serial.println("     |  select inst   |");
             break;
          default:
-            switchDefault("updateLCD");
+            // switchDefault("updateLCD");
             break;
       }
       modeChanged = false;
    }
    // [!] sacar de aca, a metodos aparte "update BPM" etc  <<<<<<<<<<<<<<<
    if (bpmChanged) {
-      Serial.print("BPM: ");
-      Serial.println(bpm);
+      // p/debuggin
+      // Serial.print("BPM: ");
+      // Serial.println(bpm);
       bpmChanged = false;
    }
    if (pausePlayChanged) {
-      Serial.println(paused ? "Paused  ◦" : "Playing •");
+      // p/debugging
+      // Serial.println(paused ? "Paused  ◦" : "Playing •");
       pausePlayChanged = false;
    }
 }
@@ -346,6 +337,13 @@ void updateVolume() {
    }
 }
 
+void printLinesLCD(char* line1, char* line2) {
+   LCD.setCursor(0,0);
+   LCD.print(line1);
+   LCD.setCursor(0,1);
+   LCD.print(line2);
+}
+
 // MIDI =======================================================================
 
 void noteOn(byte channel, byte note, byte velocity) {
@@ -367,9 +365,9 @@ void volumeChange(byte channel, byte value) {
 
 void matrixButtonPress(int n) {
    // p/debugging
-   Serial.print("                                   [Button ");
-   Serial.print(n);
-   Serial.println(": ↓]");
+   // Serial.print("                                   [Button ");
+   // Serial.print(n);
+   // Serial.println(": ↓]");
 
    switch (currentMode) {
       case live:
@@ -377,16 +375,13 @@ void matrixButtonPress(int n) {
          noteOn(midiChannel, getInstrumentNote(myInstrumentSet[n].kitSound), VELOCITY);
          MidiUSB.flush();
          // p/debugging
-         Serial.print("Played: INST_");
-         Serial.println(n);
+         // Serial.print("Played: INST_");
+         // Serial.println(n);
          break;
       case patternEditor:
          if (instrumentChosen < 0) {
             // todavia no elegi -> marco como elegido al boton presionado
             instrumentChosen = n;
-   // ----> // [!] HORRIBLE: habilito actualizacion de la seccion modos de updateLCD (ver en done)
-            // implementar forma que quede sin "modeCHanged" revoleados por todas partes,
-            // que el updateLCD se encargue de mirar los bpm, volumen, mode y se actualice si cambiaron
             modeChanged = true;
          } else {
             // ya fue elegido el instrumento -> edito su patron
@@ -394,11 +389,11 @@ void matrixButtonPress(int n) {
             // quedaria mal si el boton 0 hiciera toggle al bit 0 del patron
             myInstrumentSet[instrumentChosen].pattern ^= (1 << (matrixSize - 1) - n);
             // p/debugging
-            Serial.print("New pattern: ");
-            for(int i = matrixSize - 1; i >= 0; i--) {
-               Serial.print(bitRead(myInstrumentSet[instrumentChosen].pattern,i) ? "▇ " : "▁ ");
-            }
-            Serial.println("");
+            // Serial.print("New pattern: ");
+            // for(int i = matrixSize - 1; i >= 0; i--) {
+            //    Serial.print(bitRead(myInstrumentSet[instrumentChosen].pattern,i) ? "▇ " : "▁ ");
+            // }
+            // Serial.println("");
          }
          break;
       case instrumentEditor:
@@ -411,35 +406,35 @@ void matrixButtonPress(int n) {
       case mute:
          myInstrumentSet[n].mute = !myInstrumentSet[n].mute;
          // p/debugging
-         Serial.print(myInstrumentSet[n].mute ? "Mute ON:  INST_" : "Mute OFF: INST_");
-         Serial.println(n);
+         // Serial.print(myInstrumentSet[n].mute ? "Mute ON:  INST_" : "Mute OFF: INST_");
+         // Serial.println(n);
          break;
       default:
-         switchDefault("matrixButtonPress");
+         // switchDefault("matrixButtonPress");
          break;
    }
 }
 
 void matrixButtonRelease(int n) {
    // p/debugging
-   Serial.print("                                   [Button ");
-   Serial.print(n);
-   Serial.println(": ↑]");
+   // Serial.print("                                   [Button ");
+   // Serial.print(n);
+   // Serial.println(": ↑]");
 
    switch (currentMode) {
       case live:
          noteOff(midiChannel, getInstrumentNote(myInstrumentSet[n].kitSound), VELOCITY);
          MidiUSB.flush();
          // p/debugging
-         Serial.print("Played: INST_");
-         Serial.println(n);
+         // Serial.print("Played: INST_");
+         // Serial.println(n);
          break;
       case mute:
       case patternEditor:
       case instrumentEditor:
          break;
       default:
-         switchDefault("matrixButtonRelease");
+         // switchDefault("matrixButtonRelease");
          break;
    }
 }
@@ -463,12 +458,12 @@ void nextMode() {
             currentMode = live;
             break;
          default:
-            switchDefault("nextMode");
+            // switchDefault("nextMode");
             break;
       }
       modeChanged = true;
       // p/debugging
-      Serial.println("                                   [Command: Mode >]");
+      // Serial.println("                                   [Command: Mode >]");
    }
 }
 
@@ -489,12 +484,12 @@ void previousMode() {
             currentMode = instrumentEditor;
             break;
          default:
-            switchDefault("previousMode");
+            // switchDefault("previousMode");
             break;
       }
       modeChanged = true;
       // p/debugging
-      Serial.println("                                   [Command: Mode <]");
+      // Serial.println("                                   [Command: Mode <]");
    }
 }
 
@@ -503,7 +498,7 @@ void increaseBPM() {
    setTimerBPM(bpm);
    bpmChanged = true;
    // p/debugging
-   Serial.println("                                   [Command: BPM +]");
+   // Serial.println("                                   [Command: BPM +]");
 }
 
 void decreaseBPM() {
@@ -511,7 +506,7 @@ void decreaseBPM() {
    setTimerBPM(bpm);
    bpmChanged = true;
    // p/debugging
-   Serial.println("                                   [Command: BPM -]");
+   // Serial.println("                                   [Command: BPM -]");
 }
 
 void nextInstrument() {
@@ -523,7 +518,7 @@ void nextInstrument() {
       noteOn(midiChannel, getInstrumentNote(myInstrumentSet[instrumentChosen].kitSound), VELOCITY);
       MidiUSB.flush();
       // p/debugging
-      Serial.println("                                   [Command: Next Instrument >]");
+      // Serial.println("                                   [Command: Next Instrument >]");
    }
 }
 
@@ -536,7 +531,7 @@ void previousInstrument() {
       noteOn(midiChannel, getInstrumentNote(myInstrumentSet[instrumentChosen].kitSound), VELOCITY);
       MidiUSB.flush();
       // p/debugging
-      Serial.println("                                   [Command: Previous Instrument <]");
+      // Serial.println("                                   [Command: Previous Instrument <]");
    }
 }
 
@@ -544,7 +539,7 @@ void playPause() {
    paused = !paused;
    pausePlayChanged = true;
    // p/debugging
-   Serial.println("                                   [Command: Pause/Play]");
+   // Serial.println("                                   [Command: Pause/Play]");
 }
 
 void done() {
@@ -554,16 +549,16 @@ void done() {
       // [!] HORRIBLE OTRA VEZ
       modeChanged = true;
       // p/debugging
-      Serial.println("                                   [Command: Editing done]");
+      // Serial.println("                                   [Command: Editing done]");
    }
 }
 
 
-// Otros ======================================================================
+// PARA DEBUGGING =============================================================
 
-// p/debugging
-void switchDefault(char* str) {
-   Serial.print("                                   [!: Switch Default - ");
-   Serial.print(str);
-   Serial.println("]");
-}
+// void switchDefault(char* str) {
+//    p/debugging
+//    Serial.print("                                   [!: Switch Default - ");
+//    Serial.print(str);
+//    Serial.println("]");
+// }

@@ -49,6 +49,6 @@ int getVolume() {
 
 // conversion de valor adc (0...1023) a volumen
 static int mapToVolume(int adc_in) {
-	int volumeValue = map(adc_in,ADC_MIN,ADC_MAX,volumeMin,volumeMax);
+	int volumeValue = map(adc_in,ADC_MIN,ADC_MAX,volumeMax,volumeMin);
 	return volumeValue;
 }
