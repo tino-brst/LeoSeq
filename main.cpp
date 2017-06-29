@@ -68,15 +68,15 @@ long LEDsPatternAux;
 
 void setup() {
    
-   matrixInit('B', PB4, PB5, PB6);
+   buttonsInit('B', PB4, PB5, PB6);
    timerInit(stepActions);
-   LEDsInit(PB7, PD6, PC7);
+   LEDsInit();
    volumeInit(0,0,127);
    setTimerBPM(bpm);
    LCD.begin(16, 2);
 
    setDefaultIntrumentSet();
-   setMatrixButtonsAction();
+   setButtonsAction();
 
    // p/debugging (patrones sencillos) █ ░ 
    myInstrumentSet[0].pattern = 0b00010101;
@@ -97,7 +97,7 @@ void setup() {
 
 void loop() {
    timerScan();   // ejecuta stepActions (cuando corresponda)
-   matrixScan();  // ejecuta funcion de botones de la matriz (cuando corresponda)
+   buttonsScan();  // ejecuta funcion de botones de la matriz (cuando corresponda)
    volumeScan();
    updateLCD();
    updateLEDs();
@@ -107,53 +107,53 @@ void loop() {
 // ============================================================================
 
 // configura accion correspondiente a cada boton en la matriz 
-void setMatrixButtonsAction() {
+void setButtonsAction() {
 
    // Botones de Matriz
 
    // Boton 0
-   matrixButtonPressCallback(matrixButtonPress, BUTTON_0);
-   matrixButtonReleaseCallback(matrixButtonRelease, BUTTON_0);
+   buttonPressCallback(matrixButtonPress, BUTTON_0);
+   buttonReleaseCallback(matrixButtonRelease, BUTTON_0);
    // Boton 1
-   matrixButtonPressCallback(matrixButtonPress, BUTTON_1);
-   matrixButtonReleaseCallback(matrixButtonRelease, BUTTON_1);
+   buttonPressCallback(matrixButtonPress, BUTTON_1);
+   buttonReleaseCallback(matrixButtonRelease, BUTTON_1);
    // Boton 2
-   matrixButtonPressCallback(matrixButtonPress, BUTTON_2);
-   matrixButtonReleaseCallback(matrixButtonRelease, BUTTON_2);
+   buttonPressCallback(matrixButtonPress, BUTTON_2);
+   buttonReleaseCallback(matrixButtonRelease, BUTTON_2);
    // Boton 3
-   matrixButtonPressCallback(matrixButtonPress, BUTTON_3);
-   matrixButtonReleaseCallback(matrixButtonRelease, BUTTON_3);
+   buttonPressCallback(matrixButtonPress, BUTTON_3);
+   buttonReleaseCallback(matrixButtonRelease, BUTTON_3);
    // Boton 4
-   matrixButtonPressCallback(matrixButtonPress, BUTTON_4);
-   matrixButtonReleaseCallback(matrixButtonRelease, BUTTON_4);
+   buttonPressCallback(matrixButtonPress, BUTTON_4);
+   buttonReleaseCallback(matrixButtonRelease, BUTTON_4);
    // Boton 5
-   matrixButtonPressCallback(matrixButtonPress, BUTTON_5);
-   matrixButtonReleaseCallback(matrixButtonRelease, BUTTON_5);
+   buttonPressCallback(matrixButtonPress, BUTTON_5);
+   buttonReleaseCallback(matrixButtonRelease, BUTTON_5);
    // Boton 6
-   matrixButtonPressCallback(matrixButtonPress, BUTTON_6);
-   matrixButtonReleaseCallback(matrixButtonRelease, BUTTON_6);
+   buttonPressCallback(matrixButtonPress, BUTTON_6);
+   buttonReleaseCallback(matrixButtonRelease, BUTTON_6);
    // Boton 7
-   matrixButtonPressCallback(matrixButtonPress, BUTTON_7);
-   matrixButtonReleaseCallback(matrixButtonRelease, BUTTON_7);
+   buttonPressCallback(matrixButtonPress, BUTTON_7);
+   buttonReleaseCallback(matrixButtonRelease, BUTTON_7);
 
    // Botones de Control
 
    // Boton 8
-   matrixButtonPressCallback(increaseBPM, BUTTON_8);
+   buttonPressCallback(increaseBPM, BUTTON_8);
    // Boton 9
-   matrixButtonPressCallback(decreaseBPM, BUTTON_9);
+   buttonPressCallback(decreaseBPM, BUTTON_9);
    // Boton 10
-   matrixButtonPressCallback(previousInstrument, BUTTON_10);
+   buttonPressCallback(previousInstrument, BUTTON_10);
    // Boton 11
-   matrixButtonPressCallback(nextInstrument, BUTTON_11);
+   buttonPressCallback(nextInstrument, BUTTON_11);
    // Boton 12
-   matrixButtonPressCallback(previousMode, BUTTON_12);
+   buttonPressCallback(previousMode, BUTTON_12);
    // Boton 13
-   matrixButtonPressCallback(nextMode, BUTTON_13);
+   buttonPressCallback(nextMode, BUTTON_13);
    // Boton 14
-   matrixButtonPressCallback(done, BUTTON_14);
+   buttonPressCallback(done, BUTTON_14);
    // Boton 15
-   matrixButtonPressCallback(playPause, BUTTON_15);
+   buttonPressCallback(playPause, BUTTON_15);
 }
 
 // configura un set de intrumentos por defecto
@@ -446,8 +446,6 @@ void matrixButtonRelease(int n) {
 
 // Acciones de los botones de control =========================================
 
-// [!] por ahora uso algunos de la matriz pero van a ser otros
-
 void nextMode() {
    // habilito cambio de modo siempre que no este en el medio de una edicion
    if (instrumentChosen < 0) {
@@ -549,7 +547,6 @@ void playPause() {
    Serial.println("                                   [Command: Pause/Play]");
 }
 
-// termina edicion de un instrumento y (falta) apretado mantenido guarda la sesion actual en memoria
 void done() {
    // si estaba en modo edicion y ya habia elegido instrumento -> salgo de la edicion de ese instrumento
    if ((currentMode == patternEditor || currentMode == instrumentEditor) && (instrumentChosen >= 0)) {

@@ -15,8 +15,8 @@ static long runUpdateTime = 75;
 static long currentRunLED = 0;
 static long checkPointRun = 0;
 
-void LEDsInit(int _loadPin, int _clockPin, int _dataPin) {
-  spShiftRegInit(_loadPin,_clockPin,_dataPin, regCount);
+void LEDsInit() {
+  spShiftRegInit(PB7, PD6, PC7, regCount);
 }
 
 void setLEDsPattern(long pattern) {

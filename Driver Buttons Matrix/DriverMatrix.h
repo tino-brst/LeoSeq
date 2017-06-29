@@ -22,16 +22,16 @@
 // ╚══════════════════════════════╝
 
 // inicializa matriz de botones
-void matrixInit(char _port, int _loadPin, int _clockPin, int _dataPin);
+void buttonsInit(char _port, int _loadPin, int _clockPin, int _dataPin);
 
 // escanea entradas paralelas
-void matrixScan();
+void buttonsScan();
 
 // retorna el estado actual de los botones
 long getMatrixButtonsState();
 
 // configura la funcion a ejecutar al presionar un boton
-void matrixButtonPressCallback(void (*handler)(int n), int button);
+void buttonPressCallback(void (*handler)(int n), int button);
 
 // configura la funcion a ejecutar al presionar un boton
-void matrixButtonReleaseCallback(void (*handler)(int n), int button);
+void buttonReleaseCallback(void (*handler)(int n), int button);

@@ -22,7 +22,9 @@ static char port;
 static const int regCount = 2;   // numero de reg. de desplazamiento que usa
 
 // [!] buttonsCount: CONTEMPLAR QUE PASA CUANDO NO ES MULTIPLO DE 8
-static const int buttonsCount = 16;
+static const int matrixButtons  = 8; // numero de botones dedicados a la matriz
+static const int controlButtons = 8; // numero de botones dedicados a control
+static const int buttonsCount = matrixButtons + controlButtons;   // total de botones
 static void (*callbacks[2][buttonsCount])(int n);     //[0][...]: tecla presionada | [1][...]: tecla levantada
 
 static long latestState = 0;
@@ -35,7 +37,7 @@ static long bitsChanged;
 
 // ============================================================================
 
-void matrixInit(char _port, int _loadPin, int _clockPin, int _dataPin) {
+void buttonsInit(char _port, int _loadPin, int _clockPin, int _dataPin) {
 
    loadPin = _loadPin;
    clockPin = _clockPin;
@@ -46,7 +48,7 @@ void matrixInit(char _port, int _loadPin, int _clockPin, int _dataPin) {
    setDefaultButtonActions();
 }
 
-void matrixScan() {
+void buttonsScan() {
    // leo y guardo estado actual de los botones
    latestState = readShiftReg(port, loadPin, clockPin, dataPin, regCount);
    // detecto cambios y aplico debounce
@@ -81,25 +83,26 @@ void matrixScan() {
    }
 }
 
-// retorna el estado actual de los botones 
+// retorna el estado actual de los botones de la matriz
 long getMatrixButtonsState() {
-   return lastValidState & (0b11111111);
+   // enmascaro estado de todos los botones para quedarme solo con los de la matriz
+   return lastValidState & ((1 << matrixButtons) - 1);
 }
 
 // configura la funcion a ejecutar al presionar un boton
-void matrixButtonPressCallback(void (*handler)(int n), int button) {
+void buttonPressCallback(void (*handler)(int n), int button) {
    callbacks[pressed][button] = handler;
 }
 
 // configura la funcion a ejecutar al presionar un boton
-void matrixButtonReleaseCallback(void (*handler)(int n), int button) {
+void buttonReleaseCallback(void (*handler)(int n), int button) {
    callbacks[released][button] = handler;
 }
 
 // ============================================================================
 
 // accion por default de botones sin configuracion
-static void unmappedKeyAction() {
+static void unmappedButtonAction() {
    // p/debugging
    // Serial.println("[!] Action not asigned");
    // Serial.flush();
@@ -109,7 +112,7 @@ static void unmappedKeyAction() {
 static void setDefaultButtonActions() {
    for (int i = 0; i < 2; i ++) {
       for (int j = 0; j < buttonsCount; j++) {
-         callbacks[i][j] = unmappedKeyAction;
+         callbacks[i][j] = unmappedButtonAction;
       }
    }
 }
