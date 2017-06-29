@@ -7,7 +7,7 @@
 #include "DriverVolume.h"
 #include "DriverLCD.h"
 
-// ============================================================================
+// DEFINICION DE VARIABLES ====================================================
 
 #define VELOCITY  127   // velocidad/volumen de notas por defecto
 
@@ -43,20 +43,24 @@ int bpmStep = 10;       // tamaño del incremento/decremento de BPMs
 
 int currentStep = -1;         // paso actual (va de 0 a matrixSize - 1)
 long currentLEDPattern = 0;   // estado actual de los LEDs de la matriz
-bool paused = false;
+int minVolumeValidChange = 5;
+int lastValidVolume = 0;
+int currentVolume = 127;
 
+bool paused = false;
 enum operationModes currentMode = live;
 
 rgb_lcd LCD;
 bool printLCD = true;
 
-int previousVolume = 127;
-int currentVolume = 127;
-
 // auxiliares varios para LCD
+bool firstLoop = true;
 bool modeChanged = true;
-bool bpmChanged = true;
-bool pausePlayChanged = true;
+bool bpmChanged = false;
+bool pausePlayChanged = false;
+bool volumeChanged = false;
+long checkPointQuickMessage = 0;
+int quickMessageDelay = 500;
 
 // auxiliares varios para editor de patrones
 int instrumentChosen = -1;
@@ -64,7 +68,7 @@ int instrumentChosen = -1;
 // auxiliares para manejo de LEDs
 long LEDsPatternAux;
 
-// Setup & Loop ===============================================================
+// SETUP & LOOP ===============================================================
 
 void setup() {
    
@@ -84,7 +88,7 @@ void setup() {
    setLEDsPattern(0b10101010);
 
    // p/debugging
-   // Serial.begin(9600);  
+    Serial.begin(9600);  
    // me aseguro de que el puerto este abierto antes de empezar a tirarle que imprima
    // while (!Serial);
    // [!] OJO: hace que no sea plug and play, si no esta el monitor del puerto serie
@@ -100,9 +104,11 @@ void loop() {
    updateLCD();
    updateLEDs();
    updateVolume();
+
+   firstLoop = false;
 }
 
-// ============================================================================
+// METODOS ============================================================================
 
 // configura accion correspondiente a cada boton en la matriz 
 void setButtonsAction() {
@@ -273,7 +279,25 @@ void updateLCD() {
       // Serial.println(bpm);
       bpmChanged = false;
    }
+   if (volumeChanged) {
+      if (millis() - checkPointQuickMessage > quickMessageDelay) {
+         volumeChanged = false;
+         modeChanged = true;
+      } else {
+         LCD.setCursor(0,0);
+         LCD.print("     VOLUME     ");
+         LCD.setCursor(0,1);
+         // mapeo aprox del volumen a los 16 lugares en el LCD
+         for (int i = 0; i < lastValidVolume/7; i++) {
+            LCD.print((char)0b11111111);
+         }
+         for (int i = 0; i < 16 - lastValidVolume/7; i++) {
+            LCD.print((char)0b10100101);
+         }
+      }
+   }
    if (pausePlayChanged) {
+
       // p/debugging
       // Serial.println(paused ? "Paused  ◦" : "Playing •");
       pausePlayChanged = false;
@@ -330,10 +354,18 @@ void updateLEDs() {
 }
 
 void updateVolume() {
-   previousVolume = currentVolume;
    currentVolume = getVolume();
-   if (previousVolume != currentVolume) {
-      volumeChange(midiChannel,currentVolume);
+   // la primera vez hago un ajuste para no tomar la dif. entre valor previo y actual como intencional
+   if (firstLoop) {
+      lastValidVolume = currentVolume;
+   }
+   // filtro cambios esporadicos por variaciones leves en durante sensado
+   if ((currentVolume > lastValidVolume + minVolumeValidChange) || (currentVolume < lastValidVolume - minVolumeValidChange)) {
+      // si esta a +- cierta tolerancia, tomo el cambio de volumen como valido
+      lastValidVolume = currentVolume;
+      volumeChanged = true;
+      checkPointQuickMessage = millis();
+      volumeChange(midiChannel,lastValidVolume);
    }
 }
 
@@ -342,6 +374,10 @@ void printLinesLCD(char* line1, char* line2) {
    LCD.print(line1);
    LCD.setCursor(0,1);
    LCD.print(line2);
+}
+
+void quickMessageLCD(char* line1, char* line2) {
+
 }
 
 // MIDI =======================================================================
