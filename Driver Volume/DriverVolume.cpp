@@ -17,18 +17,9 @@ int adc_in;
 
 // inicializacion del potenciometro(solicita canal al ADC)
 void volumeInit(int _inputPin, int volMin, int volMax) {
-	// deshabilito interrupciones globales
-	cli();
-	
-	// solicito canal del ADC y guardo puntero a resultado de las conversiones
 	inputPin = _inputPin; 
-	
-	//Asigno los valores minimo y maximo de volumen
 	volumeMin = volMin;
 	volumeMax = volMax;
-	
-	// habilito interrupciones globales
-	sei();
 }
 
 //	actualiza valor de volumen medido (via ADC)

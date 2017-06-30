@@ -52,12 +52,14 @@ enum operationModes currentMode = live;
 
 rgb_lcd LCD;
 bool printLCD = true;
+byte pauseIcon[8] = {0b00000,0b11011,0b11011,0b11011,0b11011,0b11011,0b11011,0b00000};
+byte playIcon[8] = {0b00000,0b11000,0b11110,0b11111,0b11111,0b11110,0b11000,0b00000};
 
 // auxiliares varios para LCD
 bool firstLoop = true;
 bool modeChanged = true;
 bool bpmChanged = false;
-bool pausePlayChanged = false;
+bool playPauseChanged = false;
 bool volumeChanged = false;
 long checkPointQuickMessage = 0;
 int quickMessageDelay = 500;
@@ -77,7 +79,11 @@ void setup() {
    LEDsInit();
    volumeInit(0,0,127);
    setTimerBPM(bpm);
+   
+   // inicializo LCD y caracteres custom
    LCD.begin(16, 2);
+   LCD.createChar(0,pauseIcon);
+   LCD.createChar(1,playIcon);
 
    setDefaultIntrumentSet();
    setButtonsAction();
@@ -88,7 +94,7 @@ void setup() {
    setLEDsPattern(0b10101010);
 
    // p/debugging
-    Serial.begin(9600);  
+   // Serial.begin(9600);  
    // me aseguro de que el puerto este abierto antes de empezar a tirarle que imprima
    // while (!Serial);
    // [!] OJO: hace que no sea plug and play, si no esta el monitor del puerto serie
@@ -108,7 +114,7 @@ void loop() {
    firstLoop = false;
 }
 
-// METODOS ============================================================================
+// METODOS VARIOS =============================================================
 
 // configura accion correspondiente a cada boton en la matriz 
 void setButtonsAction() {
@@ -214,7 +220,7 @@ void updateLCD() {
       switch (currentMode) {
          case live:
             LCD.setRGB(100,204,204); //turquesa o algo asi
-            printLinesLCD("      LIVE      "," play something ");
+            printLinesLCD("LIVE             ","play something  ");
             // p/debugging
             // Serial.println("LCD: |      LIVE      |");
             // Serial.println("     | play something |");
@@ -223,14 +229,14 @@ void updateLCD() {
             if (instrumentChosen < 0) {
                LCD.setRGB(220,100,50);
                // todavia no elegi instrumento
-               printLinesLCD(" PATTERN EDITOR ","  select inst.  ");
+               printLinesLCD("PATTERN EDITOR  ","select inst.    ");
                // p/debugging
                // Serial.println("LCD: | PATTERN EDITOR |");
                // Serial.println("     |  select inst   |");
             } else {
                LCD.setRGB(220,100,50);
                // ya elegi instrumento, estoy editando su patron
-               printLinesLCD(" PATTERN EDITOR ","  editing inst. ");
+               printLinesLCD("PATTERN EDITOR  ","editing inst.   ");
                // p/debugging
                // Serial.println("LCD: | PATTERN EDITOR |");
                // Serial.print  ("     | editing inst ");
@@ -243,14 +249,14 @@ void updateLCD() {
             if (instrumentChosen < 0) {
                LCD.setRGB(129,218,70); //verdecito o algo asi
                // todavia no elegi instrumento
-               printLinesLCD("   SET EDITOR   ","  select inst.  ");
+               printLinesLCD("SET EDITOR      ","select inst.    ");
                // p/debugging
                // Serial.println("LCD: |   SET EDITOR   |");
                // Serial.println("     |  select inst   |");
             } else {
                LCD.setRGB(129,218,70); //verdecito o algo asi
                // ya elegi instrumento, estoy editando su patron
-               printLinesLCD("   SET EDITOR   ","  editing inst. ");
+               printLinesLCD("SET EDITOR      ","editing inst.   ");
                // p/debugging
                // Serial.println("LCD: |   SET EDITOR   |");
                // Serial.print  ("     | editing inst ");
@@ -260,8 +266,8 @@ void updateLCD() {
             }
             break;
          case mute:
-            LCD.setRGB(225,219,59); //turquesa o algo asi
-            printLinesLCD("      MUTE      ","  select inst.  ");
+            LCD.setRGB(240,229,59); //turquesa o algo asi
+            printLinesLCD("MUTE            ","select inst.    ");
             // p/debugging
             // Serial.println("LCD: |      MUTE      |");
             // Serial.println("     |  select inst   |");
@@ -272,35 +278,27 @@ void updateLCD() {
       }
       modeChanged = false;
    }
-   // [!] sacar de aca, a metodos aparte "update BPM" etc  <<<<<<<<<<<<<<<
+   if (playPauseChanged) {
+      // p/debugging
+      // Serial.println(paused ? "Paused  ◦" : "Playing •");
+      playPauseChanged = false;
+   }
    if (bpmChanged) {
       // p/debuggin
       // Serial.print("BPM: ");
-      // Serial.println(bpm);
+      // Serial.println(bpm);  
       bpmChanged = false;
    }
+   // cambiar!
    if (volumeChanged) {
       if (millis() - checkPointQuickMessage > quickMessageDelay) {
          volumeChanged = false;
          modeChanged = true;
       } else {
-         LCD.setCursor(0,0);
-         LCD.print("     VOLUME     ");
-         LCD.setCursor(0,1);
-         // mapeo aprox del volumen a los 16 lugares en el LCD
-         for (int i = 0; i < lastValidVolume/7; i++) {
-            LCD.print((char)0b11111111);
-         }
-         for (int i = 0; i < 16 - lastValidVolume/7; i++) {
-            LCD.print((char)0b10100101);
-         }
+         printVolumeLCD();
       }
-   }
-   if (pausePlayChanged) {
-
-      // p/debugging
-      // Serial.println(paused ? "Paused  ◦" : "Playing •");
-      pausePlayChanged = false;
+   } else {
+      printPausePlayLCD();
    }
 }
 
@@ -323,7 +321,12 @@ void updateLEDs() {
                   LEDsPatternAux |= (1 << i);
                }
             }
-            setLEDsPattern(LEDsPatternAux | (1 << currentStep));
+            // si esta pausado solo muestra el patron, para que no se confunda que LEDs son del patron y el del Step actual
+            if (paused) {
+               setLEDsPattern(LEDsPatternAux);
+            } else {
+               setLEDsPattern(LEDsPatternAux | (1 << currentStep));
+            }
          }
          break;
       case instrumentEditor:
@@ -363,11 +366,13 @@ void updateVolume() {
    if ((currentVolume > lastValidVolume + minVolumeValidChange) || (currentVolume < lastValidVolume - minVolumeValidChange)) {
       // si esta a +- cierta tolerancia, tomo el cambio de volumen como valido
       lastValidVolume = currentVolume;
-      volumeChanged = true;
-      checkPointQuickMessage = millis();
       volumeChange(midiChannel,lastValidVolume);
+      checkPointQuickMessage = millis();
+      volumeChanged = true;
    }
 }
+
+// LCD ========================================================================
 
 void printLinesLCD(char* line1, char* line2) {
    LCD.setCursor(0,0);
@@ -376,8 +381,30 @@ void printLinesLCD(char* line1, char* line2) {
    LCD.print(line2);
 }
 
-void quickMessageLCD(char* line1, char* line2) {
+void printVolumeLCD() {
+   LCD.setCursor(0,0);
+   LCD.print("VOLUME          ");
+   LCD.setCursor(0,1);
+   // mapeo aprox del volumen a los 16 lugares en el LCD
+   for (int i = 0; i < lastValidVolume/7; i++) {
+      LCD.write((char)0b11111111);  // cuadrado negro
+   }
+   for (int i = 0; i < 16 - lastValidVolume/7; i++) {
+      LCD.write((char)0b10100101);  // punto centrado
+   }
+}
 
+void printBpmLCD() {
+   printLinesLCD("      BPM       ","      test      ");
+}
+
+void printPausePlayLCD() {
+   LCD.setCursor(15,0);
+   if (paused) {
+      LCD.write((byte)0);
+   } else {
+      LCD.write((byte)1);
+   }
 }
 
 // MIDI =======================================================================
@@ -540,6 +567,7 @@ void increaseBPM() {
 void decreaseBPM() {
    bpm = (bpm - bpmStep < 0 )? 0 : bpm - bpmStep;
    setTimerBPM(bpm);
+   checkPointQuickMessage = millis();
    bpmChanged = true;
    // p/debugging
    // Serial.println("                                   [Command: BPM -]");
@@ -573,7 +601,7 @@ void previousInstrument() {
 
 void playPause() {
    paused = !paused;
-   pausePlayChanged = true;
+   playPauseChanged = true;
    // p/debugging
    // Serial.println("                                   [Command: Pause/Play]");
 }
